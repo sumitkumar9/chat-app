@@ -29,7 +29,7 @@ const AddMemberDialog = ({ addMember, isLoadingAddMember, chatId }) => {
             <DialogTitle textAlign={"center"}>Add Member</DialogTitle>
             <Stack spacing={"1rem"}>
                 {
-                    sampleUsers.length > 0 ? sampleUsers.map((user) => (
+                    members.length > 0 ? members.map((user) => (
                         <UserItem key={user._id} user={user} handler={selectMemberHandler} />
                     )): <Typography textAlign={"center"}>No Friends</Typography>
                 }

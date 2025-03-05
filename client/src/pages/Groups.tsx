@@ -13,7 +13,8 @@ import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Link } from "../components/styles/StyledComponents";
 import AvtarCard from "../components/shared/AvtarCard";
-import { sampleData } from "../constants/sampleData";
+import { sampleData, sampleUsers } from "../constants/sampleData";
+import UserItem from "../components/shared/UserItem";
 
 const ConfirmDeleteDialog = lazy(() => import("../components/dialogs/ConfirmDeleteDialog"));
 const AddMemberDialog = lazy(() => import("../components/dialogs/AddMemberDialog"));
@@ -31,7 +32,7 @@ const Groups = () => {
   const [groupNameUpdatedValue, setGroupNameUpdatedValue] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const isAddMember = true;
+  const isAddMember = false;
 
   const navigateBack = () => {
     navigate("/");
@@ -66,9 +67,17 @@ const Groups = () => {
 
   const handleMobileClose = () => setIsMobileMenuOpen(false);
 
+  const removeMemberHandler = (id: string) => {
+    console.log("remove member", id);
+  }
+
+  console.log("GroupName", groupName);
   useEffect(() => {
-    setGroupName(`Group ${chatId}`);
-    setGroupNameUpdatedValue(`Group ${chatId}`);
+    if (chatId) {
+      console.log("chatId", chatId);
+      setGroupName(`Group ${chatId}`);
+      setGroupNameUpdatedValue(`Group ${chatId}`);
+    }
 
     // return () => {
     //   setGroupName("");
@@ -179,7 +188,7 @@ const Groups = () => {
         {IconBtns}
 
         {
-          GroupName && <>
+          groupName && <>
           
           {GroupName}
           <Typography
@@ -205,6 +214,19 @@ const Groups = () => {
             overflow={"auto"}
           >
             {/* memebers */}
+
+            {
+              sampleUsers.map((user) => (
+                <UserItem user={user} isAdded={true} styling={{
+                  boxShadow: "0 0 1rem rgba(0,0,0,0.2)",
+                  padding: "1rem 2rem",
+                  borderRadius: "1rem"
+                }}
+                handler={removeMemberHandler}
+                key={user._id}
+              />
+              ))
+            }
           </Stack>
           
           {ButtonGroup}
