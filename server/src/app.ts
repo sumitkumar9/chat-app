@@ -2,9 +2,23 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
+import cookieParser from 'cookie-parser';
+import { config } from "dotenv";
+config();
 
 import { MYSQL_CONNECTION } from "./config/database_mysql";
 import { userRouter } from './routes/user';
+import { chatRouter } from "./routes/chat";
+
+
+// Extend the Request interface to include the 'user' property
+declare global {
+    namespace Express {
+        interface Request {
+            user?: any;
+        }
+    }
+}
 
 const app = express();
 const PORT = 4000;
@@ -12,6 +26,9 @@ const PORT = 4000;
 const server = createServer(app);
 
 const io = new Server(server); 
+
+app.use(express.json());
+app.use(cookieParser());
 
 function handleValidationError() {
 
@@ -70,6 +87,7 @@ async function main() {
 // routes
 
 app.use('/user', userRouter);
+app.use('/chat', chatRouter);
 
 app.get('/', async (req, res) => {
     try {
@@ -83,58 +101,7 @@ app.get('/', async (req, res) => {
     }
 });
 
-// let client = 0;
-// let roomno = 1;
-// io.on('connection', (socket) => {
-
-//     client++;
-
-//     console.log('a user connected');
-//     // setTimeout(() => {
-//     //     socket.emit('testEvent', { description: 'A custom event named testEvent has been emitted' });
-//     // }, 4000);
-//     // socket.on('testEvent2', (data) => {
-//     //     console.log("testEvent2: ", data)
-//     // });
-
-//     // broadcast to all clients
-//     // io.sockets.emit('broadcast', { description: client + ' clients connected!' });
-//     // socket.emit('newClientConnect', { description: 'Welcome to the chat!' });
-//     // socket.broadcast.emit('newClientConnect', { description: client + ' clients connected!' });
-
-//     // joining a room 
-//     socket.join('room-' + roomno);
-//     io.sockets.in('room-' + roomno).emit('connectToRoom', { description: 'You are in room no. ' + roomno });
-
-//     // disconnecting from a room
-//     socket.on('disconnect', function () {
-//         client--;
-//         // io.sockets.emit('broadcast', { description: client + ' clients connected!' });
-//         // socket.broadcast.emit('newClientConnect', { description: client + ' clients connected!' });
-//         console.log('A user disconnected');
-//     });
-// });
-
 
 // chat application
-
-const users = [];
-
-io.on('connection', (socket) => {
-    console.log('a user connected');
-    socket.on('setUsername', (data) => {
-        if (users.indexOf(data) > -1) {
-            socket.emit('userExists', data + ' username is taken! Try some other username.');
-        } else {
-            users.push(data);
-            socket.emit('userSet',  { username: data });
-        }
-    });
-
-    socket.on('msg', function(data){
-        //Send message to everyone
-        io.sockets.emit('newmsg', data);
-    })
-});
 
 main();

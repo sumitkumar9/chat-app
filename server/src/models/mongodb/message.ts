@@ -1,25 +1,36 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document } from "mongoose";
 
 interface IMessage extends Document {
-    chat_id: string;
-    sender_id: string;
-    message_type: string;
-    content: string;
-    status: string;
-    reactions: Array<{ user_id: string, reaction: string }>;
-    created_at: Date;
-    updated_at: Date;
+  chat_id: string;
+  sender_id: string;
+  message_type: string;
+  content: string;
+  reactions: Array<{ user_id: string; reaction: string }>;
+  attachments: {
+    public_id: string;
+    url: string;
+  };
 }
 
-const messageSchema = new Schema<IMessage>({
-    chat_id: { type: String, required: true },
-    sender_id: { type: String, required: true },
+const messageSchema = new Schema<IMessage>(
+  {
+    chat_id: { type: String, required: true, ref: "Chat" },
+    sender_id: { type: String, required: true, ref: "User" },
     message_type: { type: String, required: true },
-    content: { type: String, required: true },
-    status: { type: String, required: true },
+    content: { type: String },
+    attachments: {
+      public_id: {
+        type: String,
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      },
+    },
     reactions: [{ user_id: String, reaction: String }],
-    created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
-});
+  },
+  { timestamps: true }
+);
 
-export const Message = model<IMessage>('Message', messageSchema);
+export const Message = model<IMessage>("Message", messageSchema);
