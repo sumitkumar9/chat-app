@@ -1,33 +1,29 @@
 import { Schema, model, Document } from "mongoose";
 
 interface IMessage extends Document {
-  chat_id: string;
-  sender_id: string;
-  message_type: string;
+  chat: string;
+  sender: string;
   content: string;
   reactions: Array<{ user_id: string; reaction: string }>;
   attachments: {
     public_id: string;
     url: string;
-  };
+  }[];
 }
 
 const messageSchema = new Schema<IMessage>(
   {
-    chat_id: { type: String, required: true, ref: "Chat" },
-    sender_id: { type: String, required: true, ref: "User" },
-    message_type: { type: String, required: true },
+    chat: { type: String, required: true, ref: "Chat" },
+    sender: { type: String, required: true, ref: "User" },
     content: { type: String },
-    attachments: {
+    attachments: [{
       public_id: {
         type: String,
-        required: true,
       },
       url: {
         type: String,
-        required: true,
       },
-    },
+    }],
     reactions: [{ user_id: String, reaction: String }],
   },
   { timestamps: true }
