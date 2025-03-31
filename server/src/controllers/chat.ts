@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Chat } from "../models/mongodb/chat";
-import { emitEvent } from "../utils/features";
+import { deleteFilesFromCloudinary, emitEvent } from "../utils/features";
 import { ALERT, NEW_ATTACHMENT, NEW_MESSAGE_ALERT, REFECTCH_CHATS } from "../utils/constant";
 import { User, UserAtrr } from '../models/mongodb/user';
 import { Message } from '../models/mongodb/message';
@@ -252,12 +252,43 @@ export const deleteChat = async (req: Request, res: Response) => {
             return res.status(403).json({ message: "You are not allowed to delete this chat" });
         }
 
-        await chat.deleteOne();
+        const memebers = chat.members;
 
-        emitEvent(req, ALERT, chat.members, `Chat has been deleted`);
-        emitEvent(req, REFECTCH_CHATS, chat.members, '');
+        // delete messages 
+
+        const messagesWithAttachments = await Message.find({ chat: chatId, attachments: { $exists: true, $ne: [] } });
+
+        const public_ids = [];
+
+        messagesWithAttachments.forEach(({ attachments }) => {
+            attachments.forEach(({ public_id }) => {
+                public_ids.push(public_id);
+            })
+        })
+
+        await Promise.all([Message.deleteMany({ chat: chatId }),    await chat.deleteOne(), deleteFilesFromCloudinary(public_ids)]);
+
+        emitEvent(req, REFECTCH_CHATS, memebers, '');
 
         return res.status(200).json({ message: "Chat deleted successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+}
+
+export const getMessages = async (req: Request, res: Response) => {
+    const { chatId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+
+    const skip = (page - 1) * 20;
+    try {
+        const [messages, totalMessageCount] = await Promise.all([Message.find({ chat: chatId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(20)
+            .populate<{sender: UserAtrr}>('sender', 'name'), Message.countDocuments({ chat: chatId })]);
+
+        return res.status(200).json({ message: messages.reverse(), total: totalMessageCount});
     } catch (error) {
         return res.status(500).json({ message: "Something went wrong", error: error.message });
     }

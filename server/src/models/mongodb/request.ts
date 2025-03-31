@@ -14,8 +14,8 @@ const requestSchema = new Schema(
       enum: [STATUS.PENDING, STATUS.ACCEPTED, STATUS.REJECTED],
       default: STATUS.PENDING,
     },
-    sender_id: { type: Types.ObjectId, required: true, ref: "User" },
-    receiver_id: { type: Types.ObjectId, required: true, ref: "User" },
+    sender: { type: Types.ObjectId, required: true, ref: "User" },
+    receiver: { type: Types.ObjectId, required: true, ref: "User" },
   },
   { timestamps: true }
 );
