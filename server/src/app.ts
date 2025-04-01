@@ -3,12 +3,16 @@ import mongoose from 'mongoose';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import cookieParser from 'cookie-parser';
+import { v4 as uuid } from 'uuid';
 import { config } from "dotenv";
 config();
 
 import { MYSQL_CONNECTION } from "./config/database_mysql";
 import { userRouter } from './routes/user';
 import { chatRouter } from "./routes/chat";
+import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from './utils/constant';
+import { getSockets } from './utils/features';
+import { Message } from './models/mongodb/message';
 
 
 // Extend the Request interface to include the 'user' property
@@ -26,6 +30,8 @@ const PORT = 4000;
 const server = createServer(app);
 
 const io = new Server(server); 
+
+export const userSocketIds = new Map();
 
 app.use(express.json());
 app.use(cookieParser());
@@ -89,16 +95,60 @@ async function main() {
 app.use('/user', userRouter);
 app.use('/chat', chatRouter);
 
-app.get('/', async (req, res) => {
-    try {
-        // const message = await Message.find();
-        // res.send(message);
 
-        res.sendFile('D:/Non/Chat-app/src/view/index.html');
-    } catch (error) {
-        console.log(error);
-        res.status(500).send(error);
+// Socket.io connection
+io.use((socket, next) => {
+
+});
+
+io.on('connection', (socket) => {
+    const user = {
+        _id: "sss",
+        name: "John Doe",
     }
+
+    userSocketIds.set(user._id.toString(), socket.id);
+    console.log('A user connected:', socket.id);
+
+    socket.on(NEW_MESSAGE, async ({ chatId, members, message }) => {
+        
+        const messageForRealTime = {
+            content: message,
+            _id: uuid(),
+            sender: {
+                _id: user._id,
+                name: user.name,
+            },
+            chat: chatId,
+            createdAt: new Date().toISOString(),
+        }
+
+        const membersSocket = getSockets(members)
+        console.log(membersSocket);
+        io.to(membersSocket).emit(NEW_MESSAGE, {
+            chatId,
+            message: messageForRealTime
+        });
+        io.to(membersSocket).emit(NEW_MESSAGE_ALERT, { chatId })
+
+        try {
+            await Message.create({
+                content: message,
+                sender: user._id,
+                chat: chatId,
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    })
+
+    console.log(userSocketIds);
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        userSocketIds.delete(user._id.toString());
+    });
+
+    // Handle other socket events here
 });
 
 
