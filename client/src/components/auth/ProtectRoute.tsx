@@ -1,9 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom'
+import { useAppSelector } from '../../redux/hooks';
 
-const ProtectRoute = ({children, user, redirect = "/login"}: {children: React.ReactNode, user: boolean, redirect?: string}) => {
-    if (!user) {
-        return <Navigate to={redirect}/>
-    }
+const ProtectRoute = ({children, redirect = "/login"}: {children?: React.ReactNode, redirect?: string;}) => {
+
+  const { user } = useAppSelector((state) => state.auth);
+
+  if (user === null) {
+    return <Navigate to={redirect} replace/>
+  }
   return children ? children : <Outlet/>
 }
 

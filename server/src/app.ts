@@ -4,6 +4,8 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import cookieParser from 'cookie-parser';
 import { v4 as uuid } from 'uuid';
+import cors from 'cors';
+import { v2 as cloudinary } from 'cloudinary';
 import { config } from "dotenv";
 config();
 
@@ -33,8 +35,21 @@ const io = new Server(server);
 
 export const userSocketIds = new Map();
 
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+}));
+
+function cloudinaryConfig() {
+    cloudinary.config({ 
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+        api_key: process.env.CLOUDINARY_API_KEY, 
+        api_secret: process.env.CLOUDINARY_API_SECRET 
+    });
+}
 
 function handleValidationError() {
 
@@ -58,6 +73,15 @@ function handleValidationError() {
     }
     if (!process.env.DB_TIMEZONE) {
         throw new Error("DB_TIMEZONE must be defined");
+    }
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        throw new Error("CLOUDINARY_CLOUD_NAME must be defined");
+    }
+    if (!process.env.CLOUDINARY_API_KEY) {
+        throw new Error("CLOUDINARY_API_KEY must be defined");
+    }
+    if (!process.env.CLOUDINARY_API_SECRET) {
+        throw new Error("CLOUDINARY_API_SECRET must be defined");
     }
 }
 
@@ -83,6 +107,7 @@ async function main() {
     try {
         handleValidationError();
         await connectDatabase();
+        cloudinaryConfig();
         init();
     } catch (err) {
         console.error("Failed to start server:", err);
@@ -92,8 +117,8 @@ async function main() {
 
 // routes
 
-app.use('/user', userRouter);
-app.use('/chat', chatRouter);
+app.use('/api/v1/user', userRouter);
+app.use('/api/v1/chat', chatRouter);
 
 
 // Socket.io connection

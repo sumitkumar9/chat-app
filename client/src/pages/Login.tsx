@@ -12,7 +12,13 @@ import {
 import { CameraAlt } from "@mui/icons-material";
 import { VisuallyHiddenInput } from "../components/styles/StyledComponents";
 import { useFileHandler, useInputValidation } from '6pp';
-import { usernameValidator } from "../utils/validators";
+import { emailValidator } from "../utils/validators";
+import axios from "axios";
+import { server } from "../constants/config";
+import { useAppDispatch } from "../redux/hooks";
+import { userExists } from "../redux/reducers/auth";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,20 +26,74 @@ const Login = () => {
   const toggleLogin = () => setIsLogin(!isLogin);
 
   const name = useInputValidation("");
-  const username = useInputValidation("", usernameValidator);
+  const username = useInputValidation("");
+  const email = useInputValidation("", emailValidator);
   const bio = useInputValidation("");
   const password = useInputValidation("");
 
   const avtar = useFileHandler("single");
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const dispatch = useAppDispatch();
+  const config = {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+    }
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("login");
+    try {
+      await axios.post(`${server}/api/v1/user/login`, {
+        email: email.value, 
+        password: password.value,
+      }, config)
+
+      const { data } = await axios.get(`${server}/api/v1/user/me`, config);
+      dispatch(userExists(data));
+      navigate("/")
+      toast.success("Login successful")
+    } catch (error: unknown) {
+      console.error(error);
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error?.response.data?.message || "Something went wrong");
+      } else {
+        toast.error("Something went wrong");
+      }
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("sign");
+    const formData = new FormData();
+    formData.append("name", name.value);
+    formData.append("username", username.value);
+    formData.append("email", email.value);
+    formData.append("bio", bio.value);
+    formData.append("password", password.value);
+    if (avtar.file) {
+      formData.append("avatar", avtar.file);
+    }
+    try {
+      await axios.post(`${server}/api/v1/user/register`, formData, {
+        headers: {
+          withCredentials: true,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success("Sign up successful");
+      toggleLogin();
+    } catch (error: unknown) {
+      console.error(error);
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data?.message || "Something went wrong");
+      } else {
+        toast.error("Something went wrong");
+      }
+    }
+
   };
 
   return (
@@ -64,13 +124,13 @@ const Login = () => {
                 margin="normal"
                 required
                 fullWidth
-                label="username"
-                name="username"
-                autoComplete="username"
+                label="email"
+                name="email"
+                autoComplete="email"
                 variant="outlined"
                 autoFocus
-                value={username.value}
-                onChange={username.changeHandler}
+                value={email.value}
+                onChange={email.changeHandler}
               />
               <TextField
                 margin="normal"
@@ -167,8 +227,20 @@ const Login = () => {
                 value={username.value}
                 onChange={username.changeHandler}
               />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                label="email"
+                name="email"
+                autoComplete="email"
+                variant="outlined"
+                autoFocus
+                value={email.value}
+                onChange={email.changeHandler}
+              />
               {
-                username.error && <Typography color={"error"} variant="caption">{username.error}</Typography>
+                email.error && <Typography color={"error"} variant="caption">{email.error}</Typography>
               }
               <TextField
                 margin="normal"

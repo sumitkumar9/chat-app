@@ -5,11 +5,17 @@ import {
   CalendarMonth as CalendarMonthIcon
 } from '@mui/icons-material';
 import moment from 'moment';
+import { useAppSelector } from "../../redux/hooks";
+
 
 const Profile = () => {
+
+  const { user } = useAppSelector((state) => state.auth);
+
   return (
     <Stack spacing={"2rem"} direction={"column"} alignItems={"center"}>
       <Avatar
+        src={user?.avatar?.url}
         sx={{
           width: 200,
           height: 200,

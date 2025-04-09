@@ -6,6 +6,7 @@ import { createAccessToken } from '../utils/json-web-token';
 import { Chat } from '../models/mongodb/chat';
 import { emitEvent } from '../utils/features';
 import { NEW_REQUEST, REFECTCH_CHATS } from '../utils/constant';
+import { uploadFilesInCloudinary } from '../utils/features';
 
 export const login = async (req: Request, res: Response) => {
   // User login logic
@@ -43,13 +44,25 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({message: "user already exists"});
     }
 
+    let files = []
+    if (req.file) {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      let dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      files = await uploadFilesInCloudinary([dataURI])
+    }
+
     const hashedPassword = await hashPassword(password);
     const user = await User.create({
       name,
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      avatar: {
+        public_id: files.length ? files[0].public_id : "",
+        url: files.length ? files[0].secure_url : ""
+      }
     })
+
 
     return res.status(201).json(user);
     
@@ -167,6 +180,20 @@ export const getNotifications = async (req: Request, res: Response) => {
     })
 
     return res.status(200).json(allRequests);
+  } catch (error) {
+    return res.status(500).json({message: "Something went wrong", error: error.message});
+  }
+}
+
+export const getMyProfile = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.user._id).select({ password: 0 });
+
+    if (!user) {
+      return res.status(400).json({message: "User not found"});
+    }
+
+    return res.status(200).json(user);
   } catch (error) {
     return res.status(500).json({message: "Something went wrong", error: error.message});
   }
