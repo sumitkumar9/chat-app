@@ -5,25 +5,27 @@ import ChatList from "../specific/ChatList";
 import { sampleData } from "../../constants/sampleData";
 import { useParams } from "react-router-dom";
 import Profile from "../specific/Profile";
+import { useMyChatQuery } from "../../redux/api/api";
 
 
 
 const AppLayout = (WrappedComponent: React.ComponentType) => {
-  
-
 
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const LayoutComponent = (props: any) => {
     const params = useParams();
-  const chatId = params.chatId as string;
+    const chatId = params.chatId as string;
 
-  const handleDeleteChat = (e: React.SyntheticEvent,_id: string,groupChat: boolean) => {
+    const { data } = useMyChatQuery("");
+    console.log("chat-data", data)
+
+    const handleDeleteChat = (e: React.SyntheticEvent,_id: string, groupChat: boolean) => {
       e.preventDefault();
 
       console.log(_id, groupChat);
 
-  }
+    }
     
     return (
       <>

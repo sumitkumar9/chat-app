@@ -198,3 +198,11 @@ export const getMyProfile = async (req: Request, res: Response) => {
     return res.status(500).json({message: "Something went wrong", error: error.message});
   }
 }
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    return res.cookie('accessToken', '', { maxAge: 0, path: '/', httpOnly: true}).send({ message: "Logout Success" });
+  } catch (error) {
+    return res.status(500).send('Something went wrong');
+  }
+}
